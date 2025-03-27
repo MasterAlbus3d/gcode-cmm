@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
+"""
+Coordinate Measurement Machine (CMM) Control Script
 
+This script connects to a machine via a serial interface, sends G-code commands,
+and allows the user to interactively calibrate and record measurement points.
+
+Key functionalities include:
+    - Reading configuration settings from a JSON file.
+    - Establishing a serial connection to the machine.
+    - Sending G-code commands and reading responses.
+    - Tracking the machine's position via internal state (and potentially querying
+      actual coordinates with M114 in the future).
+    - Two modes of operation:
+         * "Rectangle" mode: automatically generates a grid and records positions.
+         * "Free" mode: allows manual control and point collection.
+    - Using ANSI escape codes for styled terminal output.
+"""
 import json
 import serial
 import time
@@ -8,6 +24,35 @@ import termios
 import tty
 import os
 import csv
+
+def query_current_position():
+    """
+    Queries the machine for its current coordinates using M114.
+    Assumes the machine's axes have been homed.
+    
+    Returns:
+        list: A list containing [X, Y, Z] coordinates.
+    """
+    # Send M114 command to query the position.
+    s.write("M114\n".encode())
+    time.sleep(0.1)  # Allow time for the machine to respond
+
+    # Read the response from the serial port.
+    # Depending on your firmware, you might need to read multiple lines.
+    response = s.readline().decode().strip()
+
+    # Parse the response, expecting a format like: "X:10.00 Y:20.00 Z:30.00 E:0.00 ..."
+    coords = {}
+    for part in response.split():
+        if ":" in part:
+            key, value = part.split(":", 1)
+            if key in ("X", "Y", "Z"):
+                try:
+                    coords[key] = float(value)
+                except ValueError:
+                    coords[key] = 0.0
+    # Return the X, Y, Z coordinates, defaulting to 0 if not found.
+    return [coords.get("X", 0.0), coords.get("Y", 0.0), coords.get("Z", 0.0)]
 
 def read_settings():
     """
