@@ -1,34 +1,29 @@
-import curses
-from ui import CMMUI
-from data_handler import DataHandler
-from serial_communication import CMMCommunicator
-import time
+"""
+Main Module
 
-def main(stdscr):
-    cmm_ui = CMMUI(stdscr)
-    data_handler = DataHandler()
-    communicator = CMMCommunicator(port='/dev/ttyUSB0')
-    
-    while True:
-        position = communicator.get_position()
-        
-        if position:
-            cmm_ui.draw_position(position)
-        
-        # Record point if the user presses 'r'
-        key = stdscr.getch()
-        if key == ord('r'):
-            data_handler.record_point(position)
-        
-        # Quit the program if the user presses 'q'
-        if key == ord('q'):
-            communicator.close()
-            break
-        
-        # Display points as a simple plot
-        cmm_ui.draw_points(data_handler.get_points())
-        
-        time.sleep(0.1)
+This is the entry point of the application. It wires together the configuration,
+serial communication, machine control, and user interface modules.
+"""
+
+from config import load_settings
+from serial_comm import SerialComm
+from machine import MachineController
+from ui import UserInterface
+
+def main():
+    # Load settings
+    settings = load_settings()
+
+    # Setup serial communication
+    serial_comm = SerialComm(settings["port"], settings["baud"])
+    serial_comm.open()
+
+    # Initialize machine controller
+    machine_controller = MachineController(serial_comm)
+
+    # Initialize and run the UI
+    ui = UserInterface(machine_controller)
+    ui.run()
 
 if __name__ == "__main__":
-    curses.wrapper(main)
+    main()
