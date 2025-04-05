@@ -1,27 +1,24 @@
-"""
-Configuration Module
-
-This module loads and validates settings from settings.json.
-"""
-
-import json
-import os
-
-CONFIG_FILE = "settings.json"
-
-def load_settings():
-    """
-    Loads settings from settings.json and returns them as a dictionary.
+class Config:
+    def __init__(self):
+        # Default settings
+        self.settings = {
+            "port": "/dev/ttyUSB0",
+            "baudrate": 115200,
+            "timeout": 1,
+            "simulation_mode": True,
+            "points_x": 5,
+            "points_y": 5,
+            "dist_x": 100,
+            "dist_y": 100,
+            "measurement_save_path": "measurements.csv"
+        }
     
-    Raises:
-        FileNotFoundError: If the settings.json file does not exist.
-        json.JSONDecodeError: If the file contents are not valid JSON.
-        
-    Returns:
-        dict: Dictionary of configuration settings.
-    """
-    if not os.path.exists(CONFIG_FILE):
-        raise FileNotFoundError(f"{CONFIG_FILE} not found.")
-    with open(CONFIG_FILE, 'r') as f:
-        settings = json.load(f)
-    return settings
+    def get(self, key):
+        return self.settings.get(key)
+    
+    def set(self, key, value):
+        if key in self.settings:
+            self.settings[key] = value
+
+    def get_all(self):
+        return self.settings
